@@ -55,7 +55,7 @@ public class ChatController {
 
     public void initialize(URL location, ResourceBundle resources) {
         Network.start();
-        Thread t = new Thread(() -> {
+        Thread t = new Thread(() -> {    // в этом потоке мы ждем сообщение от сервака
             try {
                 while (true) {
                     AbstractMessage am = Network.readObject();

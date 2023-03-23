@@ -11,6 +11,7 @@
     </content>
     <orderEntry type="jdk" jdkName="corretto-1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="chat-common" />
     <orderEntry type="library" name="Maven: org.projectlombok:lombok:1.18.24" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-all:4.1.70.Final" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-buffer:4.1.70.Final" level="project" />

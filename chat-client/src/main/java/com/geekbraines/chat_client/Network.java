@@ -9,13 +9,14 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Network {
-    private static Socket socket;
+    private static Socket socket;  // это сетевое соединение от клиента к серваку
     private static ObjectEncoderOutputStream out;
     private static ObjectDecoderInputStream in;
 
     public static void start() {
         try {
-            socket = new Socket("localhost", 8189);
+            socket = new Socket("localhost", 8189);  // это соединение с серваком. Клиент может получать
+            // сообщения от сервака, может их туда отправлять
             out = new ObjectEncoderOutputStream(socket.getOutputStream());
             in = new ObjectDecoderInputStream(socket.getInputStream());
         } catch (IOException e) {
@@ -41,7 +42,7 @@ public class Network {
         }
     }
 
-    public static boolean sendMsg(AbstractMessage msg) {
+    public static boolean sendMsg(AbstractMessage msg) {  // позволяет отправить в сторону сервака какой-то объект
         try {
             out.writeObject(msg);
             return true;
@@ -51,7 +52,8 @@ public class Network {
         return false;
     }
 
-    public static AbstractMessage readObject() throws ClassNotFoundException, IOException {
+    public static AbstractMessage readObject() throws ClassNotFoundException, IOException { // получаем объект от сервака
+        // исключения обязательно генерить в названии метода , а не через трай кетчи
         Object obj = in.readObject();
         return (AbstractMessage) obj;
     }
