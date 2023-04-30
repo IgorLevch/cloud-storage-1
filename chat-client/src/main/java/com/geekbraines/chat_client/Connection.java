@@ -8,17 +8,25 @@ import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-public class Network {
+public class Connection { //бывш. Netty
     private static Socket socket;  // это сетевое соединение от клиента к серваку
     private static ObjectEncoderOutputStream out;
     private static ObjectDecoderInputStream in;
+    private static final int MAX_OBJ_SIZE = 1024*1024*100; //100 mb
+    private static Connection connection;
+
+    private Connection() {}
+
+    public static Connection getConnection() {
+        return connection;
+    }
 
     public static void start() {
         try {
             socket = new Socket("localhost", 8189);  // это соединение с серваком. Клиент может получать
             // сообщения от сервака, может их туда отправлять
-            out = new ObjectEncoderOutputStream(socket.getOutputStream());
-            in = new ObjectDecoderInputStream(socket.getInputStream());
+            out = new ObjectEncoderOutputStream(socket.getOutputStream(), MAX_OBJ_SIZE);
+            in = new ObjectDecoderInputStream(socket.getInputStream(), MAX_OBJ_SIZE);
         } catch (IOException e) {
             e.printStackTrace();
         }

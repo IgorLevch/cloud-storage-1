@@ -26,4 +26,10 @@
 
     </dependencies>
 
+    <build>
+        <finalName>NettyServer</finalName>
+
+
+    </build>
+
 </project>

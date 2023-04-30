@@ -17,8 +17,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
 @Slf4j
 public class NettyServer {
+
+    private static final int PORT = 8189;
+    private static final int MAX_OBJ_SIZE = 1024*1024*100; //100 mb
+    private static final String URL = "";
+    private static final String USER = "root";
+    private static final String PASS = "admin";
 
 
     public static void main(String[] args) {
@@ -26,8 +36,10 @@ public class NettyServer {
         //это экзекьюторы - классы, которые будут делать параллельное выполнение задач из очереди.
         EventLoopGroup auth = new NioEventLoopGroup(1); // легковесная группа экзекьюторов - 1 поток обрабатывающая
         EventLoopGroup worker = new NioEventLoopGroup(); // тяжеловесная группа экзекьюторов- весь тред пул под нее уходит.
-
+        Connection connection =null;
         try {
+            connection = DriverManager.getConnection(URL, USER, PASS);
+            DAO dao = new DAO(connection);
             ServerBootstrap bootstrap = new ServerBootstrap(); // класс, с помощью коорого настраиваем конфигурацию сервера.
             ChannelFuture future = bootstrap.group(auth,worker)    // в конфигурации важно указать группу (проинициализировать)
                     // т.к. в метода return this, то пишем через точку.
@@ -43,17 +55,20 @@ public class NettyServer {
                                 // в единый объект и как только объект будет собран -- отдать его МесседжХендлеру
                           new ObjectEncoder(),     // работает на выход: когда отправляем объект в сеть, он пролетает через
                                 // исходящий Энкодер и разбивается на набор байт.
-                          new MessageHandler()  // это тоже вход
+                          new MessageHandler(dao)  // это тоже вход
                         );
                         }
-                    }).bind(8189).sync();
+                    }).bind(PORT).sync();
             log.debug("Server started ...");
             future.channel().closeFuture().sync(); // это блокирующая операция. ПОсле нее программа не выполняется.
         } catch (InterruptedException e) {
             log.error("e=",e);
+        } catch (SQLException e) {
+            e.printStackTrace();
         } finally {       // пишем сразу finally - т.к. это экзекьюторы,то их закрывать надо корректно.
         auth.shutdownGracefully();
         worker.shutdownGracefully();
+
     }
 
 }}

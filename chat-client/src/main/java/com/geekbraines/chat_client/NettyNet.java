@@ -13,8 +13,6 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import lombok.extern.slf4j.Slf4j;
 
-import static com.geekbraines.chat_client.Network.start;
-
 
 @Slf4j
 public class NettyNet {

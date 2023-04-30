@@ -1,14 +1,14 @@
 package com.geekbraines.chat_common;
 
 public class FileRequest extends AbstractMessage  {
-    private String filename;
+    private String name;
 
-    public String getFilename() {
-        return filename;
+    public String getName() {
+        return name;
     }
 
-    public FileRequest(String filename) {
-        this.filename = filename;
+    public FileRequest(String name) {
+        this.name = name;
     }
 
 }

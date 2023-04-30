@@ -5,20 +5,35 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FileMessage extends AbstractMessage {
-    private String filename;
-    private byte[] data;
+    private String name;
+    private byte[] bytes;
 
-    public String getFilename() {
-        return filename;
+    public FileMessage(String name, byte[] bytes) {
+        this.name = name;
+        this.bytes = bytes;
     }
 
-    public byte[] getData() {
-        return data;
+    public FileMessage(){}
+
+    public String getName() {
+        return name;
+    }
+
+    public byte[] getBytes() {
+        return bytes;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setBytes(byte[] bytes) {
+        this.bytes = bytes;
     }
 
     public FileMessage(Path path) throws IOException {
-        filename = path.getFileName().toString();
-        data = Files.readAllBytes(path); //считывает файл и закидывает в память
+        name = path.getFileName().toString();
+        bytes = Files.readAllBytes(path); //считывает файл и закидывает в память
     }
 
 }
