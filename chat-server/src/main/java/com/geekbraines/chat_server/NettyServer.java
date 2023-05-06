@@ -38,7 +38,7 @@ public class NettyServer {
         EventLoopGroup worker = new NioEventLoopGroup(); // тяжеловесная группа экзекьюторов- весь тред пул под нее уходит.
         Connection connection =null;
         try {
-            connection = DriverManager.getConnection(URL, USER, PASS);
+           // connection = DriverManager.getConnection(URL, USER, PASS); это обязательно включить, когда будет готов СКЬЮЭЛЬ TODO
             DAO dao = new DAO(connection);
             ServerBootstrap bootstrap = new ServerBootstrap(); // класс, с помощью коорого настраиваем конфигурацию сервера.
             ChannelFuture future = bootstrap.group(auth,worker)    // в конфигурации важно указать группу (проинициализировать)
@@ -63,7 +63,8 @@ public class NettyServer {
             future.channel().closeFuture().sync(); // это блокирующая операция. ПОсле нее программа не выполняется.
         } catch (InterruptedException e) {
             log.error("e=",e);
-        } catch (SQLException e) {
+            //  СТРОКОЙ НИЖЕ ДОЛЖНО БЫТЬ SQLException e  а не просто Exception  TODO
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {       // пишем сразу finally - т.к. это экзекьюторы,то их закрывать надо корректно.
         auth.shutdownGracefully();

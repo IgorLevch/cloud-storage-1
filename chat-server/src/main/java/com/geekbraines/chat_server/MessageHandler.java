@@ -1,9 +1,7 @@
 package com.geekbraines.chat_server;
 
-import com.geekbraines.chat_common.AbstractMessage;
-import com.geekbraines.chat_common.AuthMessage;
-import com.geekbraines.chat_common.FileMessage;
-import com.geekbraines.chat_common.RequestMessage;
+import com.geekbraines.chat_common.*;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
@@ -12,32 +10,42 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 
 
 @Slf4j  // это чтобы печатать в лог
 public class MessageHandler extends SimpleChannelInboundHandler<AbstractMessage>  {
 
+    private Path currentDir; //  это уже новая переменная
+// в новом сервере channelActive() и channelRead0()
+
     private DAO dao;
     private File dir;
     private FileMessage fileMessage;
-    private RequestMessage request;
 
-    public MessageHandler(DAO dao){
+    public MessageHandler(DAO dao) {
+    }
+
+
+   /* public MessageHandler(DAO dao) throws IOException {
         this.dao = dao;
         this.fileMessage = new FileMessage();
-        this.request = new RequestMessage();
-    }
 
-
-    public void channelActive(ChannelHandlerContext ctx) {
-        System.out.println("Client connected ...");
-    }
+    }*/
 
     @Override
+    public void channelActive(ChannelHandlerContext ctx) throws IOException {
+        currentDir = Paths.get("root");
+        if(!Files.exists(currentDir)){
+            Files.createDirectory(currentDir); //если не существует, то создаем.
+        }
+        ctx.writeAndFlush(new FilesListResponse(currentDir)); // потом отправляем ответочку из файликов, которые есть
+        // в данной директории
+            }
+
+  /*  @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 
         //в этом методе, условно говоря, получаем от клиента сообщение и отдаем обратно - это когда тут был эхо-сервер)))
@@ -88,14 +96,31 @@ public class MessageHandler extends SimpleChannelInboundHandler<AbstractMessage>
         } finally {
             ReferenceCountUtil.release(msg);
         }}
-
+*/
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, AbstractMessage msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, AbstractMessage abstractMessage) throws Exception {
+        switch (abstractMessage.getType()){
+            case FILE_REQUEST:
+                FileRequest request = (FileRequest) abstractMessage; // кастуем к нужному типу
+                Path file = currentDir.resolve(request.getFileName());
+                ctx.writeAndFlush(new FileMessage(file));   // это мы отдаем
+                break;
+            case FILE_RESPONSE:  // нам файл прислали
+                FileMessage fileMsg = (FileMessage) abstractMessage; //кaстуем выражение
+                Files.write(                                  // записываем байты
+                        currentDir.resolve(fileMsg.getFileName()),
+                        fileMsg.getBytes()
+                );
+                ctx.writeAndFlush(new FilesListResponse(currentDir)); // файл прилетел новый,
+                // сосотояние сервера изменилось и нужно уведомить об этом клиента
+                break;
+            // case FILES_LIST_RESPONSE:    такую команду сервер отдает и получить не может
+        }
 
     }
-
+/*
     private void createNewFile(FileMessage message) throws IOException{
-        FileOutputStream out = new FileOutputStream(new File(dir, message.getName()));
+        FileOutputStream out = new FileOutputStream(new File(dir, message.getFileName()));
         out.write(message.getBytes());
         out.close();
     }
@@ -113,7 +138,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<AbstractMessage>
                     try {
                         byte[] bytes = Files.readAllBytes(Paths.get(dir.getPath()+"/"+file)); //readAllBytes каждый раз
                         // создает новый байтовый массив в памяти
-                        fileMessage.setName(file);
+                        fileMessage.setFileName(file);
                         fileMessage.setBytes(bytes);
                         ctx.write(fileMessage);
                     } catch (IOException e) {
@@ -136,7 +161,6 @@ public class MessageHandler extends SimpleChannelInboundHandler<AbstractMessage>
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.info("client disconnected ...");
-    }
+    }*/
 }
 
-// тут всего 3 метода: sendUpdateList, sendFiles, createNewFile

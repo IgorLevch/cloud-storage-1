@@ -1,5 +1,6 @@
 package com.geekbraines.chat_common;
 
+/*
 public class AuthMessage extends AbstractMessage {
 
     private String login;
@@ -35,3 +36,4 @@ public class AuthMessage extends AbstractMessage {
                 '}';
     }
 }
+*/

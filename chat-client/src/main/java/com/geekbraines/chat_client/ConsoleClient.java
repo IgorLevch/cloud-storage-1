@@ -1,6 +1,6 @@
 package com.geekbraines.chat_client;
 
-import com.geekbraines.chat_common.StringMessage;
+
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -14,7 +14,7 @@ public class ConsoleClient {
         Scanner in  = new Scanner(System.in);
         while(in.hasNextLine()) {
             String msg = in.nextLine();
-            net.sendMessage(new StringMessage(msg, LocalDateTime.now()));  //послали такой объект в сеть
+            //net.sendMessage(new StringMessage(msg, LocalDateTime.now()));  //послали такой объект в сеть
             // а сеть нам вернула этот же объект обратно
         }
     }

@@ -3,45 +3,47 @@ package com.geekbraines.chat_client;
 import com.geekbraines.chat_common.AbstractMessage;
 import com.geekbraines.chat_common.FileMessage;
 
-import com.geekbraines.chat_common.RequestMessage;
+import com.geekbraines.chat_common.FilesListResponse;
+import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
+import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TitledPane;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.List;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 public class ChatController implements Initializable {
 
+    private Path currentDir;
     @FXML
-    public ListView <String> Local_field_with_files;
+    public ListView<String> serverFiles;
 
     @FXML
-    public ListView <String> Cloud_field_with_files;
+    public ListView<String> clientFiles;
     @FXML
     public Label localInfoLabel;
     @FXML
     public Label cloudInfoLabel;
+
+    private ObjectEncoderOutputStream os;
+    private ObjectDecoderInputStream is;
 
 
     public void getout(ActionEvent actionEvent) {
@@ -51,12 +53,14 @@ public class ChatController implements Initializable {
     public void delete(ActionEvent actionEvent) {
     }
 
-    public void add_file(ActionEvent actionEvent) {
-
-
+    public void upload(ActionEvent actionEvent) throws IOException {  // здесь отпрваляем на сервер
+        Path file = currentDir.resolve(clientFiles.getSelectionModel().getSelectedItem());
+        if (!Files.isDirectory(file)) {
+            os.writeObject(new FileMessage(file));
+        }
     }
 
-    public void unload_file(ActionEvent actionEvent) {
+    public void download(ActionEvent actionEvent) {
     }
 
     public void share_file(ActionEvent actionEvent) {
@@ -67,13 +71,70 @@ public class ChatController implements Initializable {
 
     private Connection connection;
     private FileMessage fileMessage;
-    private RequestMessage request;
     private File directory;
 
+    private void refreshView(List<String> files, ListView<String> view) {
+        Platform.runLater(() -> { // чтоб дизайн не ломать
+            view.getItems().clear();
+            view.getItems().addAll(files);
+
+        });
+    }
+
+    private List<String> getFilesInCurrentDir() throws IOException {
+        return Files.list(currentDir)
+                .map(p -> p.getFileName().toString() + " -- " + resolveType(p))  //  + " -- " + p.toFile().length()  -- это выводит длину файла
+                .collect(Collectors.toList());
+    }
+
+    private String resolveType(Path p) {
+        if(Files.isDirectory(p)) {
+            return " [DIR]";
+        } else{
+            return " " + p.toFile().length() + "bytes";
+        }
+    }
+
+
+    private void read() {
+
+        try {
+            while (true) {
+                AbstractMessage msg = (AbstractMessage) is.readObject();
+                switch (msg.getType()) {
+                    case FILES_LIST_RESPONSE:  //нужно обновить файлики на сервере
+                        refreshView(((FilesListResponse) msg).getFiles(), serverFiles);// получили мы данный список
+                        // и выполнили функцию refresh
+                        break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        connection = Connection.getConnection();
+
+        try {
+            currentDir = Paths.get(System.getProperty("user.home"));
+            refreshView(getFilesInCurrentDir(), clientFiles); // обновляем при старте клиентские файлы
+            Socket socket = new Socket("localhost", 8189);
+            os = new ObjectEncoderOutputStream(socket.getOutputStream());// сначала аутпутстрим, потому что аутпутсрим регистрирует класс резолвер
+            is = new ObjectDecoderInputStream(socket.getInputStream());// инпутсрим просит класс-резолвер, а его нет еще. Он регистируется на аутпутсриме
+            Thread t = new Thread(this::read);
+            t.setDaemon(true);
+            t.start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+        /*  connection = Connection.getConnection();
         fileMessage = new FileMessage();
         request = new RequestMessage();
         directory = new File("chat-client/local");
@@ -85,15 +146,16 @@ public class ChatController implements Initializable {
 
         updateLocalHost();
         requestUpdate();
-    }
+    }*/
 
+  /*  }
     private void getMessage() {
         try {
             while (true) {
                 AbstractMessage message = connection.readObject();
                 if (message instanceof FileMessage) {
                     FileMessage file = (FileMessage) message;
-                    FileOutputStream out = new FileOutputStream(new File(directory.getPath() + "/" + file.getName()));
+                    FileOutputStream out = new FileOutputStream(new File(directory.getPath() + "/" + file.getFileName()));
                     out.write(file.getBytes());
                     out.close();
                     updateLocalHost();
@@ -117,19 +179,19 @@ public class ChatController implements Initializable {
             String[] filesList = request.getFiles();
             if (filesList == null) return;
             list.setAll(Arrays.asList(filesList));
-            Cloud_field_with_files.setItems(list);
+            clientFiles.setItems(list);
 
         });
     }
 
     //отправляем файлы в облако
     public void sendFileToServer(ActionEvent actionEvent) {
-        ObservableList<String> selectedItems = Local_field_with_files.getSelectionModel().getSelectedItems();
+        ObservableList<String> selectedItems = serverFiles.getSelectionModel().getSelectedItems();
         if (checkForSelection(selectedItems, localInfoLabel)) return;
         for (String fileName : selectedItems){
             try{
                 byte[] bytes = Files.readAllBytes(Paths.get("chat-client/local"+fileName));
-                fileMessage.setName(fileName);
+                fileMessage.setFileName(fileName);
                 fileMessage.setBytes(bytes);
                 connection.sendMsg(fileMessage);
 
@@ -141,18 +203,18 @@ public class ChatController implements Initializable {
     }
 
     //подгружаем файлы из локального каталога
-    public void updateLocalHost() {
+   *//* public void updateLocalHost() {  //   это аналог refreshServerView
         Platform.runLater(() ->{
             String [] list = directory.list();
             if(list == null) return;
-            Local_field_with_files.getItems().setAll(Arrays.asList(list));
+            serverFiles.getItems().setAll(Arrays.asList(list));
         });
-    }
+    }*//*
 
 
     // удалить локальный файл
     public void deleteLocalFile(ActionEvent actionEvent) {
-        ObservableList<String> selectedItems = Local_field_with_files.getSelectionModel().getSelectedItems();
+        ObservableList<String> selectedItems = serverFiles.getSelectionModel().getSelectedItems();
         for (String name: selectedItems
              ) { try{
                  Files.delete(Paths.get("chat-client/local" + name));
@@ -164,14 +226,14 @@ public class ChatController implements Initializable {
 
     //запросить файлы с сервера
     public void requestFile(ActionEvent actionEvent) {
-        ObservableList<String> selectedItems = Cloud_field_with_files.getSelectionModel().getSelectedItems();
+        ObservableList<String> selectedItems = clientFiles.getSelectionModel().getSelectedItems();
         if (checkForSelection(selectedItems, cloudInfoLabel)) return;
         sendRequest(RequestMessage.REQUEST_FILE, selectedItems);
     }
 
     //запрос на удаление файлов с сервера
     public void requestDelete(ActionEvent actionEvent) {
-        ObservableList<String> selectedItems = Cloud_field_with_files.getSelectionModel().getSelectedItems();
+        ObservableList<String> selectedItems = clientFiles.getSelectionModel().getSelectedItems();
         if (checkForSelection(selectedItems, cloudInfoLabel)) return;
         sendRequest(RequestMessage.REQUEST_DELETE, selectedItems);
     }
@@ -201,14 +263,14 @@ public class ChatController implements Initializable {
     //очистим выбранные при клике на пустоту
     public void updateLocalSelected(MouseEvent event){
         if (!event.getTarget().toString().startsWith("Text"))
-            Local_field_with_files.getSelectionModel().clearSelection();
+            serverFiles.getSelectionModel().clearSelection();
         else  localInfoLabel.setText("");
     }
     public void updateCloudSelected(MouseEvent event) {
         if (!event.getTarget().toString().startsWith("Text"))
-            Cloud_field_with_files.getSelectionModel().clearSelection();
+            clientFiles.getSelectionModel().clearSelection();
         else  cloudInfoLabel.setText("");
 
-    }
+    }}
 
-}
+*/
