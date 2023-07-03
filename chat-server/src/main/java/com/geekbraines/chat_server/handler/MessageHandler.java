@@ -167,7 +167,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<AbstractMessage>
         }
     }
 
-    // отправляем файл клиенту
+    // отправляем фаайл клиенту
     private void sendFile(ChannelHandlerContext ctx, AbstractMessage msg) {
         String sendFile = (root + "/" + ((Message) msg).getFileName());
         try {
