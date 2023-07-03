@@ -1,7 +1,8 @@
+/*
 package com.geekbraines.chat_client;
 
 import com.geekbraines.chat_common.AbstractMessage;
-import com.geekbraines.chat_common.AuthMessage;
+
 import com.geekbraines.chat_common.FileMessage;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.RequestMessage;
 import javafx.application.Platform;
@@ -106,3 +107,4 @@ public class LoginController implements Initializable {
 
 
 }
+*/

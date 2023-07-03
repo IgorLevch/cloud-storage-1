@@ -1,14 +1,20 @@
 package com.geekbraines.chat_common;
 
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class FileRequest extends AbstractMessage  {
-    private String name;
+    private String fileName;
 
-    public String getName() {
-        return name;
+    public FileRequest(String fileName) {
+        this.fileName = fileName;
     }
 
-    public FileRequest(String name) {
-        this.name = name;
+    @Override
+   public CommandType getType() {
+        return CommandType.FILE_REQUEST;
     }
-
 }
