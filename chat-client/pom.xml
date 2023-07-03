@@ -38,7 +38,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.geekbraines.chat_client.ChatApp</mainClass>
+                            <mainClass>com.geekbraines.chat_client.ui.App</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -59,7 +59,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>com.geekbraines.chat_client.ChatApp</mainClass>
+                            <mainClass>com.geekbraines.chat_client.ui.App</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

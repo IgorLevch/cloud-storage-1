@@ -36,7 +36,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.geekbraines.chat_server.NettyServer</mainClass>
+                            <mainClass>com.geekbraines.chat_server.net.NettyServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -57,7 +57,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>com.geekbraines.chat_server.NettyServer</mainClass>
+                            <mainClass>com.geekbraines.chat_server.net.NettyServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

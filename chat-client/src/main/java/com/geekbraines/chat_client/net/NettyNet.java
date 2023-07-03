@@ -1,6 +1,8 @@
-package com.geekbraines.chat_client;
+package com.geekbraines.chat_client.net;
 
-import com.geekbraines.chat_common.AbstractMessage;
+import com.geekbraines.chat_client.handler.ClientMessagehandler;
+import com.geekbraines.chat_common.message.AbstractMessage;
+import com.geekbraines.chat_common.message.AuthMessage;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -14,14 +16,18 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import lombok.extern.slf4j.Slf4j;
 
 
+/**
+ * Netty клиент Singleton
+ */
+
 @Slf4j
 public class NettyNet {
-    private SocketChannel channel;
-    private OnMessageReceived callback;
+    static NettyNet instance;
+    SocketChannel channel;
+   //private OnMessageReceived callback;
 
-    public NettyNet(OnMessageReceived callback) {
-        this.callback = callback;
-        new Thread(() ->{
+    private NettyNet() {
+            new Thread(() ->{
             EventLoopGroup group = new NioEventLoopGroup();
             try{
             Bootstrap bootstrap = new Bootstrap();
@@ -35,7 +41,7 @@ public class NettyNet {
                         ch.pipeline().addLast(
                                 new ObjectEncoder(),
                                 new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
-                                new ClientMessagehandler(callback)  // через коллбек этого хендлера будет осуществляться чтение
+                                ClientMessagehandler.getInstance()  // через коллбек этого хендлера будет осуществляться чтение
                                 // в коллбеке будет зашита вся логика
                         );
                         }
@@ -49,6 +55,20 @@ public class NettyNet {
         }).start();
         }
 
+        public static NettyNet getInstance(){
+        if (instance == null) {
+            instance = new NettyNet();
+            return instance;
+        } else {
+            return instance;
+        }
+        }
+
+    // отправка сообщения об авторизации на сервер
+    public void sendAuth(AuthMessage message) {
+        channel.writeAndFlush(message);
+    }
+    // метод отправки всех сообщений от клиента на сервер кроме авторизации
         public void sendMessage(AbstractMessage message){
         channel.writeAndFlush(message);
         }
